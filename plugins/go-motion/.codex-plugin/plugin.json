@@ -1,0 +1,33 @@
+{
+  "name": "go-motion",
+  "version": "0.1.0",
+  "description": "Prompt-to-video Codex plugin powered by Go, HTML, CSS, and vanilla JS.",
+  "author": {
+    "name": "OpenAI Codex Workspace",
+    "email": "noreply@example.com",
+    "url": "https://example.com"
+  },
+  "homepage": "https://example.com/go-motion",
+  "repository": "https://example.com/go-motion.git",
+  "license": "MIT",
+  "keywords": ["video", "go", "mcp", "html", "css", "javascript"],
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Go Motion",
+    "shortDescription": "Create prompt-to-video renders without Node.js",
+    "longDescription": "Generates polished MP4 videos from prompts using a Go MCP server and browser-native HTML, CSS, and vanilla JS compositions.",
+    "developerName": "OpenAI Codex Workspace",
+    "category": "Design",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://example.com/go-motion",
+    "privacyPolicyURL": "https://example.com/privacy",
+    "termsOfServiceURL": "https://example.com/terms",
+    "defaultPrompt": [
+      "Create a clean product launch video for a note-taking app",
+      "Make a kinetic typography explainer video for our startup",
+      "Generate a social promo video for a new mobile feature"
+    ],
+    "brandColor": "#1278F3",
+    "screenshots": []
+  }
+}

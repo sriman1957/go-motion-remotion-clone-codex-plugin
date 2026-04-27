@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "go-motion": {
+      "command": "./runtime/windows-amd64/bin/go-motiond.exe",
+      "args": [],
+      "transport": "stdio"
+    }
+  }
+}
