@@ -48,6 +48,7 @@ The Windows build in this repository is already working end to end.
 - Chromium runtime is bundled
 - FFmpeg runtime is bundled
 - `generate_video` renders real MP4 output locally
+- cross-platform runtime groundwork is now in place for future Windows, macOS, and Linux release bundles
 
 Current scope:
 

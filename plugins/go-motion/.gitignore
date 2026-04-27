@@ -3,3 +3,5 @@ go-motiond.exe
 jobs/
 .tmp/
 .tmp-download/
+dist/
+releases/

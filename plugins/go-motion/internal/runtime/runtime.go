@@ -5,30 +5,103 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
+	gruntime "runtime"
+	"slices"
 	"strings"
 )
+
+type Platform struct {
+	OS   string
+	Arch string
+}
+
+func (p Platform) Key() string {
+	return p.OS + "-" + p.Arch
+}
+
+func (p Platform) BrowserExecutableName() string {
+	switch p.OS {
+	case "windows":
+		return "chrome.exe"
+	case "darwin":
+		return "Chromium.app/Contents/MacOS/Chromium"
+	default:
+		return "chrome"
+	}
+}
+
+func (p Platform) EdgeExecutableName() string {
+	switch p.OS {
+	case "windows":
+		return "msedge.exe"
+	case "darwin":
+		return "Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
+	default:
+		return "microsoft-edge"
+	}
+}
+
+func (p Platform) FFmpegExecutableName() string {
+	if p.OS == "windows" {
+		return "ffmpeg.exe"
+	}
+	return "ffmpeg"
+}
+
+func (p Platform) ServerExecutableName() string {
+	if p.OS == "windows" {
+		return "go-motiond.exe"
+	}
+	return "go-motiond"
+}
 
 type Tools struct {
 	BrowserPath string
 	FFmpegPath  string
+	Platform    Platform
+	RuntimeDir  string
+	ServerPath  string
+}
+
+func CurrentPlatform() Platform {
+	return Platform{
+		OS:   gruntime.GOOS,
+		Arch: gruntime.GOARCH,
+	}
+}
+
+func SupportedPlatforms() []Platform {
+	return []Platform{
+		{OS: "windows", Arch: "amd64"},
+		{OS: "windows", Arch: "arm64"},
+		{OS: "darwin", Arch: "amd64"},
+		{OS: "darwin", Arch: "arm64"},
+		{OS: "linux", Arch: "amd64"},
+		{OS: "linux", Arch: "arm64"},
+	}
 }
 
 func ResolveTools(pluginRoot string) (Tools, error) {
-	platformDir := platformKey()
-	browserCandidates := browserCandidatePaths(pluginRoot)
-	ffmpegCandidates := ffmpegCandidatePaths(pluginRoot)
+	return ResolveToolsForPlatform(pluginRoot, CurrentPlatform())
+}
 
+func ResolveToolsForPlatform(pluginRoot string, platform Platform) (Tools, error) {
+	runtimeDir := RuntimeDir(pluginRoot, platform)
 	tools := Tools{
-		BrowserPath: firstExisting(browserCandidates),
-		FFmpegPath:  firstExisting(ffmpegCandidates),
+		BrowserPath: firstExisting(browserCandidatePaths(pluginRoot, platform)),
+		FFmpegPath:  firstExisting(ffmpegCandidatePaths(pluginRoot, platform)),
+		Platform:    platform,
+		RuntimeDir:  runtimeDir,
+		ServerPath:  LauncherPath(pluginRoot, platform),
 	}
 
-	if tools.BrowserPath == "" {
-		tools.BrowserPath = lookPathAny(browserFallbacks())
-	}
-	if tools.FFmpegPath == "" {
-		tools.FFmpegPath = lookPathAny([]string{"ffmpeg"})
+	if platform == CurrentPlatform() {
+		if tools.BrowserPath == "" {
+			tools.BrowserPath = lookPathAny(browserFallbacks(platform))
+		}
+		if tools.FFmpegPath == "" {
+			tools.FFmpegPath = lookPathAny(ffmpegFallbacks(platform))
+		}
 	}
 
 	if tools.BrowserPath != "" && tools.FFmpegPath != "" {
@@ -44,78 +117,111 @@ func ResolveTools(pluginRoot string) (Tools, error) {
 	}
 
 	return Tools{}, fmt.Errorf(
-		"required runtimes not found under %s (missing: %s)",
-		filepath.Join(pluginRoot, "runtime", platformDir),
+		"required runtimes not found for %s under %s (missing: %s; supported release targets: %s)",
+		platform.Key(),
+		runtimeDir,
 		strings.Join(missing, ", "),
+		strings.Join(SupportedPlatformKeys(), ", "),
 	)
 }
 
-func browserCandidatePaths(pluginRoot string) []string {
+func SupportedPlatformKeys() []string {
+	keys := make([]string, 0, len(SupportedPlatforms()))
+	for _, platform := range SupportedPlatforms() {
+		keys = append(keys, platform.Key())
+	}
+	return keys
+}
+
+func RuntimeDir(pluginRoot string, platform Platform) string {
+	return filepath.Join(pluginRoot, "runtime", platform.Key())
+}
+
+func LauncherPath(pluginRoot string, platform Platform) string {
+	return filepath.Join(RuntimeDir(pluginRoot, platform), "bin", platform.ServerExecutableName())
+}
+
+func browserCandidatePaths(pluginRoot string, platform Platform) []string {
+	runtimeDir := RuntimeDir(pluginRoot, platform)
 	paths := []string{
-		filepath.Join(pluginRoot, "runtime", platformKey(), "chromium", browserExecutableName()),
-		filepath.Join(pluginRoot, "runtime", platformKey(), "chrome", browserExecutableName()),
-		filepath.Join(pluginRoot, "runtime", platformKey(), "edge", edgeExecutableName()),
+		filepath.Join(runtimeDir, "chromium", platform.BrowserExecutableName()),
+		filepath.Join(runtimeDir, "chrome", platform.BrowserExecutableName()),
+		filepath.Join(runtimeDir, "edge", platform.EdgeExecutableName()),
 	}
 
-	if runtime.GOOS == "windows" {
+	switch platform.OS {
+	case "windows":
 		paths = append(paths,
 			`C:\Program Files\Google\Chrome\Application\chrome.exe`,
 			`C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`,
 			`C:\Program Files\Microsoft\Edge\Application\msedge.exe`,
 			`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`,
 		)
+	case "darwin":
+		paths = append(paths,
+			`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`,
+			`/Applications/Chromium.app/Contents/MacOS/Chromium`,
+			`/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge`,
+		)
+	case "linux":
+		paths = append(paths,
+			`/usr/bin/google-chrome`,
+			`/usr/bin/google-chrome-stable`,
+			`/usr/bin/chromium`,
+			`/usr/bin/chromium-browser`,
+			`/usr/bin/microsoft-edge`,
+		)
 	}
 
-	return paths
+	return dedupe(paths)
 }
 
-func ffmpegCandidatePaths(pluginRoot string) []string {
+func ffmpegCandidatePaths(pluginRoot string, platform Platform) []string {
 	paths := []string{
-		filepath.Join(pluginRoot, "runtime", platformKey(), "ffmpeg", ffmpegExecutableName()),
+		filepath.Join(RuntimeDir(pluginRoot, platform), "ffmpeg", platform.FFmpegExecutableName()),
 	}
-	if runtime.GOOS == "windows" {
+
+	switch platform.OS {
+	case "windows":
 		paths = append(paths,
 			`C:\ffmpeg\bin\ffmpeg.exe`,
 			`C:\Program Files\ffmpeg\bin\ffmpeg.exe`,
 			`C:\Program Files (x86)\ffmpeg\bin\ffmpeg.exe`,
 		)
+	case "darwin":
+		paths = append(paths,
+			`/opt/homebrew/bin/ffmpeg`,
+			`/usr/local/bin/ffmpeg`,
+			`/usr/bin/ffmpeg`,
+		)
+	case "linux":
+		paths = append(paths,
+			`/usr/bin/ffmpeg`,
+			`/usr/local/bin/ffmpeg`,
+		)
 	}
-	return paths
+
+	return dedupe(paths)
 }
 
-func platformKey() string {
-	return runtime.GOOS + "-" + runtime.GOARCH
-}
-
-func browserExecutableName() string {
-	if runtime.GOOS == "windows" {
-		return "chrome.exe"
-	}
-	return "chrome"
-}
-
-func edgeExecutableName() string {
-	if runtime.GOOS == "windows" {
-		return "msedge.exe"
-	}
-	return "msedge"
-}
-
-func ffmpegExecutableName() string {
-	if runtime.GOOS == "windows" {
-		return "ffmpeg.exe"
-	}
-	return "ffmpeg"
-}
-
-func browserFallbacks() []string {
-	if runtime.GOOS == "windows" {
+func browserFallbacks(platform Platform) []string {
+	switch platform.OS {
+	case "windows":
 		return []string{"chrome", "msedge", "chromium"}
-	}
-	if runtime.GOOS == "darwin" {
+	case "darwin":
 		return []string{"Google Chrome", "Chromium", "chrome", "chromium"}
+	default:
+		return []string{"google-chrome", "google-chrome-stable", "chromium", "chrome", "microsoft-edge"}
 	}
-	return []string{"google-chrome", "chromium", "chrome"}
+}
+
+func ffmpegFallbacks(platform Platform) []string {
+	switch platform.OS {
+	case "windows":
+		return []string{"ffmpeg.exe", "ffmpeg"}
+	default:
+		return []string{"ffmpeg"}
+	}
 }
 
 func firstExisting(paths []string) string {
@@ -136,4 +242,15 @@ func lookPathAny(names []string) string {
 		}
 	}
 	return ""
+}
+
+func dedupe(values []string) []string {
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		if value == "" || slices.Contains(out, value) {
+			continue
+		}
+		out = append(out, value)
+	}
+	return out
 }

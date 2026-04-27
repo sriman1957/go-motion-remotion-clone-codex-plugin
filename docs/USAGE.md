@@ -18,6 +18,39 @@ The current working package expects:
 
 These are already bundled in this workspace.
 
+## Planned cross-platform runtime matrix
+
+The repo is now structured so future releases can ship the same plugin for multiple platform targets:
+
+- `windows-amd64`
+- `windows-arm64`
+- `darwin-amd64`
+- `darwin-arm64`
+- `linux-amd64`
+- `linux-arm64`
+
+Each target should use the same directory contract:
+
+- `plugins/go-motion/runtime/<platform>/bin/go-motiond`
+- `plugins/go-motion/runtime/<platform>/chromium/...`
+- `plugins/go-motion/runtime/<platform>/ffmpeg/...`
+
+For Windows targets, the server binary name is `go-motiond.exe`.
+
+## Build scripts for runtime binaries
+
+From `plugins/go-motion/`, contributors can build server binaries for one or more targets:
+
+PowerShell:
+
+- `./scripts/package-runtime.ps1`
+- `./scripts/package-runtime.ps1 -Targets @("windows/amd64", "darwin/arm64")`
+
+Shell:
+
+- `./scripts/package-runtime.sh`
+- `./scripts/package-runtime.sh windows/amd64 linux/amd64`
+
 ## How the render flow works
 
 1. Codex invokes `generate_video`
