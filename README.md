@@ -8,6 +8,8 @@
 
 Go Motion is an open-source Codex plugin that turns prompts into rendered MP4 videos without requiring Node.js on the end user's machine. The plugin ships a Go MCP server, renders browser-native compositions in headless Chromium, and encodes the final output with FFmpeg.
 
+We’re actively open to contributions from Go developers, browser tooling folks, and anyone interested in building a strong Node-free video workflow.
+
 ## Why this exists
 
 Remotion-quality workflows are powerful, but they normally depend on a Node.js toolchain. Go Motion explores a different path:
