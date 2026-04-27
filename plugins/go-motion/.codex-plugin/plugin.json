@@ -3,12 +3,11 @@
   "version": "0.1.0",
   "description": "Prompt-to-video Codex plugin powered by Go, HTML, CSS, and vanilla JS.",
   "author": {
-    "name": "OpenAI Codex Workspace",
-    "email": "noreply@example.com",
-    "url": "https://example.com"
+    "name": "sriman1957",
+    "url": "https://github.com/sriman1957"
   },
-  "homepage": "https://example.com/go-motion",
-  "repository": "https://example.com/go-motion.git",
+  "homepage": "https://github.com/sriman1957/go-motion-remotion-clone-codex-plugin",
+  "repository": "https://github.com/sriman1957/go-motion-remotion-clone-codex-plugin.git",
   "license": "MIT",
   "keywords": ["video", "go", "mcp", "html", "css", "javascript"],
   "mcpServers": "./.mcp.json",
@@ -16,12 +15,12 @@
     "displayName": "Go Motion",
     "shortDescription": "Create prompt-to-video renders without Node.js",
     "longDescription": "Generates polished MP4 videos from prompts using a Go MCP server and browser-native HTML, CSS, and vanilla JS compositions.",
-    "developerName": "OpenAI Codex Workspace",
+    "developerName": "sriman1957",
     "category": "Design",
     "capabilities": ["Read", "Write"],
-    "websiteURL": "https://example.com/go-motion",
-    "privacyPolicyURL": "https://example.com/privacy",
-    "termsOfServiceURL": "https://example.com/terms",
+    "websiteURL": "https://github.com/sriman1957/go-motion-remotion-clone-codex-plugin",
+    "privacyPolicyURL": "https://github.com/sriman1957/go-motion-remotion-clone-codex-plugin/blob/master/README.md",
+    "termsOfServiceURL": "https://github.com/sriman1957/go-motion-remotion-clone-codex-plugin/blob/master/LICENSE",
     "defaultPrompt": [
       "Create a clean product launch video for a note-taking app",
       "Make a kinetic typography explainer video for our startup",

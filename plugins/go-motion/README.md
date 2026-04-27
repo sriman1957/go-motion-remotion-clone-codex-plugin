@@ -1,25 +1,57 @@
-# Go Motion
+# Go Motion Plugin
 
-Go Motion is a Codex plugin that generates prompt-to-video compositions using a Go MCP server and a browser-native HTML/CSS/vanilla JS runtime.
+This directory contains the actual Codex plugin bundle for Go Motion.
 
-## Status
+## Purpose
 
-This repository currently contains the initial plugin scaffold and render pipeline architecture. The code is designed for bundled Chromium-compatible and FFmpeg runtimes, but those binaries are not checked into source control.
+The plugin exposes a Go MCP server that accepts prompt-based video generation requests and renders MP4 output through a browser-native pipeline:
 
-## Runtime requirements
+- scene planning
+- HTML, CSS, and vanilla JS composition generation
+- headless Chromium frame capture
+- FFmpeg encoding
 
-Go Motion expects bundled Chromium-compatible and FFmpeg runtimes under `runtime/<platform>/`.
+## Bundle structure
 
-During development, the server may optionally fall back to compatible system-installed tools when plugin-local runtimes are unavailable.
+- [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json): plugin metadata
+- [`.mcp.json`](./.mcp.json): MCP server launcher
+- [`cmd/go-motiond`](./cmd/go-motiond): server entrypoint
+- [`internal/mcp`](./internal/mcp): MCP protocol and tool handlers
+- [`internal/planner`](./internal/planner): prompt-to-composition planning
+- [`internal/templates`](./internal/templates): composition templates
+- [`internal/render`](./internal/render): browser rendering and encoding orchestration
+- [`internal/runtime`](./internal/runtime): bundled runtime discovery
+- [`runtime/windows-amd64`](./runtime/windows-amd64): packaged Windows runtime
+
+## Tooling model
+
+Go Motion is intentionally Node-free on the user machine.
+
+- No Node.js install required
+- No npm dependency required
+- No Go install required for Windows end users of the packaged bundle
+
+The shipped runtime provides:
+
+- `go-motiond.exe`
+- Chromium
+- FFmpeg
 
 ## Current capabilities
 
-- prompt planning into a structured composition
-- HTML/CSS/vanilla JS composition package generation
-- MCP stdio tool surface with `generate_video` and `list_styles`
-- frame-by-frame browser screenshot rendering
-- MP4 encoding orchestration through FFmpeg
+- `initialize`, `tools/list`, and `tools/call` MCP flow
+- `generate_video` for prompt-to-video rendering
+- `list_styles` for available composition styles
+- local composition packaging into HTML, CSS, and JS files
+- frame-by-frame rendering into MP4 output
 
-## Current limitation
+## Current constraints
 
-Real MP4 output requires both a browser runtime and FFmpeg. On machines where only the browser is available, the plugin will still generate the composition package and render plan, but it will report the missing FFmpeg runtime instead of silently failing.
+- packaged runtime currently targets Windows `amd64`
+- rendering is local and can take time for larger jobs
+- the composition model is browser-native rather than React-based
+
+## Related docs
+
+- [`../../README.md`](../../README.md)
+- [`../../docs/USAGE.md`](../../docs/USAGE.md)
